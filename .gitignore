@@ -27,3 +27,13 @@
 *.i*86
 *.x86_64
 *.hex
+
+# Files
+INSTALL
+aclocal.m4
+configure
+
+# Directories
+config
+m4
+autom4te.cache
