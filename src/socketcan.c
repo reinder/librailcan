@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "librailcan.h"
-#include "railcan_proto.h"
+#include "../shared/railcan-proto/railcan_proto.h"
 #include "bus.h"
 #include "module.h"
 #include "log.h"

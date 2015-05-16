@@ -39,7 +39,7 @@
 #endif
 #include "module.h"
 #include "socketcan.h"
-#include "railcan_proto.h"
+#include "../shared/railcan-proto/railcan_proto.h"
 #include "log.h"
 
 int librailcan_bus_open_custom( librailcan_bus_send send , struct librailcan_bus** bus )

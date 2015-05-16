@@ -24,7 +24,7 @@
 
 #include <stdbool.h>
 #include "librailcan.h"
-#include "railcan_proto.h"
+#include "../shared/railcan-proto/railcan_proto.h"
 
 struct librailcan_module
 {
