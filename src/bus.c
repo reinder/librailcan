@@ -25,11 +25,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
-#include <net/if.h>
-#include <sys/ioctl.h>
 #include <errno.h>
 #ifdef HAVE_LINUX_CAN_H
 #  include <linux/can.h>
+#  include <net/if.h>
+#  include <sys/ioctl.h>
 #endif
 #ifdef HAVE_LINUX_CAN_RAW_H
 #  include <linux/can/raw.h>
