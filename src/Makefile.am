@@ -22,3 +22,6 @@ librailcan_la_SOURCES = \
 
 librailcan_CFLAGS = \
 	-fPIC
+
+librailcan_la_LDFLAGS = \
+	-no-undefined
