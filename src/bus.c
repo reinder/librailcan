@@ -198,7 +198,7 @@ int librailcan_bus_process_poll( struct librailcan_bus* bus , short revents )
         if( frame.can_id & CAN_EFF_FLAG ) // ignore extended frames
           continue;
 #endif
-        bus_received( bus , frame.can_id , ( frame.can_id & CAN_RTR_FLAG ) ? LIBRAILCAN_DLC_RTR : frame.can_dlc , frame.data );
+        bus_received( bus , frame.can_id & CAN_SFF_MASK , ( frame.can_id & CAN_RTR_FLAG ) ? LIBRAILCAN_DLC_RTR : frame.can_dlc , frame.data );
       }
       else if( r == 0 || ( r == -1 && errno == EAGAIN ) )
         break;

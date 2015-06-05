@@ -37,7 +37,7 @@ int socketcan_send( struct librailcan_bus* bus , uint32_t id , int8_t dlc , cons
   if( !item )
     return LIBRAILCAN_STATUS_NO_MEMORY;
 
-  item->frame.can_id = id;
+  item->frame.can_id = id & CAN_SFF_MASK;
   if( dlc == LIBRAILCAN_DLC_RTR )
     item->frame.can_id |= CAN_RTR_FLAG;
   else
