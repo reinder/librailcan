@@ -191,12 +191,12 @@ int librailcan_dcc_set_speed( struct librailcan_module* module , uint16_t addres
   }
   else if( ( value & 0xc0 ) == LIBRAILCAN_DCC_SPEED_28 )
   {
-    speed_steps = dcc_128;
+    speed_steps = dcc_28;
     speed = value & 0x3f;
   }
   else if( ( value & 0xe0 ) == LIBRAILCAN_DCC_SPEED_14 )
   {
-    speed_steps = dcc_128;
+    speed_steps = dcc_14;
     speed = value & 0x1f;
   }
   else
