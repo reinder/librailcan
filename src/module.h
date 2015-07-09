@@ -32,6 +32,7 @@ struct librailcan_module
   struct librailcan_bus* bus;
   uint8_t type;
   bool is_open;
+  bool is_active;
   void* private_data;
   void (*free)( struct librailcan_module* module );
   int (*open)( struct librailcan_module* module );

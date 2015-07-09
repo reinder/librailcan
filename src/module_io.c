@@ -234,6 +234,8 @@ int librailcan_io_write_digital_output( struct librailcan_module* module , unsig
     return LIBRAILCAN_STATUS_INVALID_PARAM;
   else if( module->type != LIBRAILCAN_MODULETYPE_IO )
     return LIBRAILCAN_STATUS_NOT_SUPPORTED;
+  else if( !module->is_active )
+    return LIBRAILCAN_STATUS_NOT_ACTIVE;
 
   struct module_io* io = module->private_data;
 

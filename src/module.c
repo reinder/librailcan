@@ -124,6 +124,26 @@ int librailcan_module_get_type( struct librailcan_module* module , uint8_t* type
   return LIBRAILCAN_STATUS_SUCCESS;
 }
 
+int librailcan_module_get_active( struct librailcan_module* module , librailcan_bool* value )
+{
+  if( !module || !value )
+    return LIBRAILCAN_STATUS_INVALID_PARAM;
+
+  *value = module->is_active ? LIBRAILCAN_BOOL_TRUE : LIBRAILCAN_BOOL_FALSE;
+
+  return LIBRAILCAN_STATUS_SUCCESS;
+}
+
+int librailcan_module_set_active( struct librailcan_module* module , librailcan_bool value )
+{
+  if( !module || value > LIBRAILCAN_BOOL_TRUE )
+    return LIBRAILCAN_STATUS_INVALID_PARAM;
+
+  module->is_active = ( value == LIBRAILCAN_BOOL_TRUE );
+
+  return LIBRAILCAN_STATUS_SUCCESS;
+}
+
 int librailcan_module_get_user_data( struct librailcan_module* module , void** data )
 {
   if( !module || !data )

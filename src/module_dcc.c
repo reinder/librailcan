@@ -62,7 +62,7 @@ void module_dcc_received( struct librailcan_module* module , uint32_t id , int8_
   {
     case RAILCAN_SID_MESSAGE_DCC:
     {
-      if( dlc != LIBRAILCAN_DLC_RTR )
+      if( dlc != LIBRAILCAN_DLC_RTR || !module->is_active )
         break;
 
       struct module_dcc* dcc = module->private_data;

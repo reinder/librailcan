@@ -38,12 +38,18 @@ extern "C" {
 #define LIBRAILCAN_STATUS_NOT_SUPPORTED  -3
 #define LIBRAILCAN_STATUS_INVALID_PARAM  -4
 #define LIBRAILCAN_STATUS_INVALID_INDEX  -5
+#define LIBRAILCAN_STATUS_NOT_ACTIVE     -6
 
 #define LIBRAILCAN_DEBUGLEVEL_NONE     0
 #define LIBRAILCAN_DEBUGLEVEL_ERROR    1
 #define LIBRAILCAN_DEBUGLEVEL_WARNING  2
 #define LIBRAILCAN_DEBUGLEVEL_INFO     3
 #define LIBRAILCAN_DEBUGLEVEL_DEBUG    4
+
+typedef uint8_t librailcan_bool;
+
+#define LIBRAILCAN_BOOL_FALSE  0
+#define LIBRAILCAN_BOOL_TRUE   1
 
 /**
  * \brief ...
@@ -234,6 +240,24 @@ int librailcan_module_get_bus( struct librailcan_module* module , struct librail
  * \return \ref librailcan_status "Status code".
  */
 int librailcan_module_get_type( struct librailcan_module* module , uint8_t* type );
+
+/**
+ * \brief ...
+ *
+ * \param[in] module a module handle
+ * \param[out] value ...
+ * \return \ref librailcan_status "Status code".
+ */
+int librailcan_module_get_active( struct librailcan_module* module , librailcan_bool* value );
+
+/**
+ * \brief ...
+ *
+ * \param[in] module a module handle
+ * \param[in] value ...
+ * \return \ref librailcan_status "Status code".
+ */
+int librailcan_module_set_active( struct librailcan_module* module , librailcan_bool value );
 
 /**
  * \brief Get user supplied module data.
