@@ -30,18 +30,13 @@ int module_dcc_init( struct librailcan_module* module , const railcan_message_in
 {
   struct module_dcc* dcc = calloc( 1 , sizeof( *dcc ) );
   if( !dcc )
-    goto error;
+    return LIBRAILCAN_STATUS_NO_MEMORY;
 
   module->private_data = dcc;
   module->free = module_dcc_free;
   module->received = module_dcc_received;
 
   return LIBRAILCAN_STATUS_SUCCESS;
-
-error:
-  free( dcc );
-
-  return LIBRAILCAN_STATUS_NO_MEMORY;
 }
 
 void module_dcc_free( struct librailcan_module* module )
@@ -53,7 +48,15 @@ void module_dcc_free( struct librailcan_module* module )
 
 void module_dcc_close( struct librailcan_module* module )
 {
-  ((struct module_dcc*)module->private_data)->get_packet_callback = NULL;
+  struct module_dcc* dcc = module->private_data;
+
+  for( int i = 0 ; i < dcc->packet_list.count ; i++ )
+    free( dcc->packet_list.items[i] );
+  free( dcc->packet_list.items );
+
+  memset( dcc , 0 , sizeof( *dcc ) ); // Reset everything.
+
+  module_close( module );
 }
 
 void module_dcc_received( struct librailcan_module* module , uint32_t id , int8_t dlc , const void* data )
@@ -157,8 +160,7 @@ int librailcan_dcc_emergency_stop( struct librailcan_module* module , uint16_t a
 
   if( ( r = module_dcc_packet_get( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
-
-  if( !packet && ( r = module_dcc_packet_create( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+  else if( !packet && ( r = module_dcc_packet_create( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
 
   module_dcc_packet_set_speed( module , packet , packet->speed_steps , -1 );
@@ -184,6 +186,7 @@ int librailcan_dcc_set_speed( struct librailcan_module* module , uint16_t addres
   int8_t speed;
   enum dcc_speed_steps speed_steps;
 
+
   if( value & LIBRAILCAN_DCC_SPEED_128 )
   {
     speed_steps = dcc_128;
@@ -192,12 +195,12 @@ int librailcan_dcc_set_speed( struct librailcan_module* module , uint16_t addres
   else if( ( value & 0xc0 ) == LIBRAILCAN_DCC_SPEED_28 )
   {
     speed_steps = dcc_28;
-    speed = value & 0x3f;
+    speed = value & 0x1f;
   }
   else if( ( value & 0xe0 ) == LIBRAILCAN_DCC_SPEED_14 )
   {
     speed_steps = dcc_14;
-    speed = value & 0x1f;
+    speed = value & 0x0f;
   }
   else
     return LIBRAILCAN_STATUS_INVALID_PARAM;

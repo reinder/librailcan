@@ -41,6 +41,14 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
   (*packet)->address = address;
   (*packet)->type = type;
 
+  if( address & LIBRAILCAN_DCC_ADDRESS_LONG )
+  {
+    (*packet)->data[0] = 0x80 | ( ( address >> 8 ) & 0x3f );
+    (*packet)->data[1] = address & 0xff;
+  }
+  else // short address
+    (*packet)->data[0] = address & 0x7f;
+
   int n = DATA_INDEX( *packet );
 
   switch( type )
@@ -76,6 +84,22 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
   (*packet)->data_length = n;
   (*packet)->ttl = -1;
 
+  // Add packet to list:
+  struct module_dcc* dcc = module->private_data;
+
+  if( dcc->packet_list.length == dcc->packet_list.count )
+  {
+    if( dcc->packet_list.length == 0 )
+      dcc->packet_list.length = 32;
+    else
+      dcc->packet_list.length *= 2;
+
+    dcc->packet_list.items = realloc( dcc->packet_list.items , dcc->packet_list.length * sizeof( *dcc->packet_list.items ) );
+  }
+
+  dcc->packet_list.items[ dcc->packet_list.count ] = *packet;
+  dcc->packet_list.count++;
+
   return LIBRAILCAN_STATUS_SUCCESS;
 }
 
@@ -104,13 +128,13 @@ void module_dcc_packet_queue_move_front( struct librailcan_module* module , stru
 {
   struct module_dcc* dcc = module->private_data;
 
-  if( !dcc->packet_queue )
+  if( !dcc->packet_queue ) // Queue empty
   {
     dcc->packet_queue = packet;
     packet->previous = packet;
     packet->next = packet;
   }
-  else
+  else if( dcc->packet_queue != packet )
   {
     if( packet->previous && packet->next )
     {
@@ -121,9 +145,9 @@ void module_dcc_packet_queue_move_front( struct librailcan_module* module , stru
 
     // Add it at front:
     packet->previous = dcc->packet_queue->previous;
-    packet->next = dcc->packet_queue->next;
     dcc->packet_queue->previous->next = packet;
-    dcc->packet_queue->next->previous = packet;
+    packet->next = dcc->packet_queue;
+    dcc->packet_queue->previous = packet;
     dcc->packet_queue = packet;
   }
 }
@@ -132,9 +156,15 @@ void module_dcc_packet_queue_remove( struct librailcan_module* module , struct d
 {
   if( packet->previous && packet->next )
   {
-    // Extract packet from queue:
-    packet->next->previous = packet->previous;
-    packet->previous->next = packet->next;
+    if( packet->next == packet && packet->previous == packet ) // Only one packet in queue
+    {
+      ((struct module_dcc*)module->private_data)->packet_queue = NULL;
+    }
+    else // Extract packet from queue:
+    {
+      packet->next->previous = packet->previous;
+      packet->previous->next = packet->next;
+    }
 
     // Clear:
     packet->next = NULL;
@@ -214,7 +244,7 @@ void module_dcc_packet_set_direction( struct librailcan_module* module , struct 
   int n = DATA_INDEX( packet );
   uint8_t mask = 0;
 
-  switch( packet->speed_steps ) // Clear speed bits.
+  switch( packet->speed_steps )
   {
     case dcc_14:
     case dcc_28:
@@ -238,11 +268,11 @@ enum dcc_packet_type module_dcc_get_type_by_function_index( uint8_t index )
 {
   if( index <= 4 )
     return dcc_f0_f4;
-  if( index <= 8 )
+  else if( index <= 8 )
     return dcc_f5_f8;
-  if( index <= 12 )
+  else if( index <= 12 )
     return dcc_f9_f12;
-  if( index <= 20 )
+  else if( index <= 20 )
     return dcc_f13_f20;
   else // index <= 28
     return dcc_f21_f28;
