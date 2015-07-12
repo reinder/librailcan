@@ -215,6 +215,33 @@ int librailcan_bus_process_poll( struct librailcan_bus* bus , short revents )
 #endif
 }
 
+int librailcan_bus_process( struct librailcan_bus* bus , int timeout )
+{
+#if defined( HAVE_POLL_H ) && defined( HAVE_LINUX_CAN_H )
+  if( !bus )
+    return LIBRAILCAN_STATUS_INVALID_PARAM;
+  else if( bus->interface != if_socketcan )
+    return LIBRAILCAN_STATUS_NOT_SUPPORTED;
+
+  struct pollfd fd = {
+    fd : bus->socketcan.fd ,
+    events : bus->socketcan.send_queue.front ? POLLIN | POLLOUT : POLLIN , 
+    revents : 0
+  };
+
+  int r = poll( &fd , 1 , timeout );
+  if( r == -1 )
+    return LIBRAILCAN_STATUS_UNSUCCESSFUL;
+  else if( r == 0 )
+    return LIBRAILCAN_STATUS_TIMEOUT;
+  else
+    return librailcan_bus_process_poll( bus , fd.revents );
+#else
+  //! \todo Implement using select()
+  return LIBRAILCAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
 int librailcan_bus_received( struct librailcan_bus* bus , uint32_t id , int8_t dlc , const void* data )
 {
   if( !bus || id > 0x7ff || dlc < LIBRAILCAN_DLC_RTR || dlc > 8 || ( dlc > 0 && !data ) )

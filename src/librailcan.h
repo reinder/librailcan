@@ -33,6 +33,7 @@ extern "C" {
 #endif
 
 #define LIBRAILCAN_STATUS_SUCCESS         0
+#define LIBRAILCAN_STATUS_TIMEOUT         1
 #define LIBRAILCAN_STATUS_UNSUCCESSFUL   -1
 #define LIBRAILCAN_STATUS_NO_MEMORY      -2
 #define LIBRAILCAN_STATUS_NOT_SUPPORTED  -3
@@ -144,6 +145,15 @@ int librailcan_bus_get_poll_events( struct librailcan_bus* bus , short* events )
  * \return \ref librailcan_status "Status code".
  */
 int librailcan_bus_process_poll( struct librailcan_bus* bus , short revents );
+
+/**
+ * \brief ...
+ *
+ * \param[in] bus a bus handle
+ * \param[in] timeout timeout in milliseconds, or negative if you want to wait forever
+ * \return \ref librailcan_status "Status code".
+ */
+int librailcan_bus_process( struct librailcan_bus* bus , int timeout );
 
 /**
  * \brief ...
