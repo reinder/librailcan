@@ -93,7 +93,12 @@ void module_dcc_received( struct librailcan_module* module , uint32_t id , int8_
         dcc->packet_queue = packet->next;
 
         if( packet->ttl > 0 && --packet->ttl == 0 )
-          module_dcc_packet_queue_remove( module , packet );
+        {
+          if( packet->remove )
+            module_dcc_packet_delete( module , packet );
+          else
+            module_dcc_packet_queue_remove( module , packet );
+        }
       }
       else // idle packet
       {
@@ -158,7 +163,7 @@ int librailcan_dcc_emergency_stop( struct librailcan_module* module , uint16_t a
   struct dcc_packet* packet;
   int r;
 
-  if( ( r = module_dcc_packet_get( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+  if( ( r = module_dcc_packet_list_get( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
   else if( !packet && ( r = module_dcc_packet_create( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
@@ -178,7 +183,7 @@ int librailcan_dcc_set_speed( struct librailcan_module* module , uint16_t addres
   struct dcc_packet* packet;
   int r;
 
-  if( ( r = module_dcc_packet_get( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+  if( ( r = module_dcc_packet_list_get( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
   else if( !packet && ( r = module_dcc_packet_create( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
@@ -223,7 +228,7 @@ int librailcan_dcc_set_direction( struct librailcan_module* module , uint16_t ad
   struct dcc_packet* packet;
   int r;
 
-  if( ( r = module_dcc_packet_get( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+  if( ( r = module_dcc_packet_list_get( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
   else if( !packet && ( r = module_dcc_packet_create( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
@@ -245,7 +250,7 @@ int librailcan_dcc_set_function( struct librailcan_module* module , uint16_t add
 
   enum dcc_packet_type type = module_dcc_get_type_by_function_index( index );
 
-  if( ( r = module_dcc_packet_get( module , address , type , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+  if( ( r = module_dcc_packet_list_get( module , address , type , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
   else if( !packet && ( r = module_dcc_packet_create( module , address , type , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;

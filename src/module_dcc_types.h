@@ -50,6 +50,10 @@ enum dcc_direction
   dcc_forward
 };
 
+#define DCC_PACKET_TTL_INFINITE  (-1)
+#define DCC_PACKET_TTL_REMOVE    10
+#define DCC_PACKET_TTL_F13_F28   5
+
 struct dcc_packet
 {
   uint16_t address;
@@ -57,7 +61,8 @@ struct dcc_packet
   enum dcc_speed_steps speed_steps;
   uint8_t data[8];
   uint8_t data_length;
-  int8_t ttl;
+  int8_t ttl; //!< Number of times to send before removing from the queue or \c DCC_PACKET_TTL_INFINITE.
+  bool remove; //!< Remove packet from the list when \c ttl reaches zero.
   struct dcc_packet* previous;
   struct dcc_packet* next;
 };

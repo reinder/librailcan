@@ -25,7 +25,11 @@
 #include "module_dcc_types.h"
 
 int module_dcc_packet_create( struct librailcan_module* module , uint16_t address , enum dcc_packet_type type , struct dcc_packet** packet );
-int module_dcc_packet_get( struct librailcan_module* module , uint16_t address , enum dcc_packet_type type , struct dcc_packet** packet );
+void module_dcc_packet_delete( struct librailcan_module* module , struct dcc_packet* packet );
+
+int module_dcc_packet_list_add( struct librailcan_module* module , struct dcc_packet* packet );
+void module_dcc_packet_list_remove( struct librailcan_module* module , struct dcc_packet* packet );
+int module_dcc_packet_list_get( struct librailcan_module* module , uint16_t address , enum dcc_packet_type type , struct dcc_packet** packet );
 
 void module_dcc_packet_queue_move_front( struct librailcan_module* module , struct dcc_packet* packet );
 void module_dcc_packet_queue_remove( struct librailcan_module* module , struct dcc_packet* packet );
