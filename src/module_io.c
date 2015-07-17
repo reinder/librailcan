@@ -145,7 +145,7 @@ void module_io_received( struct librailcan_module* module , uint32_t id , int8_t
       for( uint_fast8_t i = 0 ; i < len ; i++ )
       {
         librailcan_tristate value = ( ((uint8_t*)data)[ i / 8 ] & ( 1 << ( 7 - ( i % 8 ) ) ) ) ? LIBRAILCAN_TRISTATE_TRUE : LIBRAILCAN_TRISTATE_FALSE;
-        if( value != io->digital_inputs[ i ] )
+        if( value != io->digital_outputs[ i ] )
         {
           io->digital_outputs[ i ] = value;
           if( io->digital_output_changed_callback )
@@ -220,7 +220,7 @@ int librailcan_io_read_digital_output( struct librailcan_module* module , unsign
 
   struct module_io* io = module->private_data;
 
-  if( index >= io->digital_input_count )
+  if( index >= io->digital_output_count )
     return LIBRAILCAN_STATUS_INVALID_INDEX;
 
   *value = io->digital_outputs[ index ];
@@ -239,7 +239,7 @@ int librailcan_io_write_digital_output( struct librailcan_module* module , unsig
 
   struct module_io* io = module->private_data;
 
-  if( index >= io->digital_input_count )
+  if( index >= io->digital_output_count )
     return LIBRAILCAN_STATUS_INVALID_INDEX;
 
   if( value != io->digital_outputs[ index ] )
