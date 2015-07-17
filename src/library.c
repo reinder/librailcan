@@ -22,7 +22,7 @@
 #include "librailcan.h"
 #include <string.h>
 
-int debug_level = LIBRAILCAN_DEBUGLEVEL_DEBUG;//LIBRAILCAN_DEBUGLEVEL_NONE;
+int debug_level = LIBRAILCAN_DEBUGLEVEL_NONE;
 
 int librailcan_set_debug_level( int level )
 {
