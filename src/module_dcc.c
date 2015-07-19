@@ -191,7 +191,6 @@ int librailcan_dcc_set_speed( struct librailcan_module* module , uint16_t addres
   int8_t speed;
   enum dcc_speed_steps speed_steps;
 
-
   if( value & LIBRAILCAN_DCC_SPEED_128 )
   {
     speed_steps = dcc_128;
@@ -213,7 +212,7 @@ int librailcan_dcc_set_speed( struct librailcan_module* module , uint16_t addres
   if( speed > speed_steps )
     return LIBRAILCAN_STATUS_INVALID_PARAM;
 
-  module_dcc_packet_set_speed( module , packet , speed_steps , value );
+  module_dcc_packet_set_speed( module , packet , speed_steps , speed );
 
   return LIBRAILCAN_STATUS_SUCCESS;
 }

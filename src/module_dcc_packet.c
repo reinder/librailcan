@@ -264,14 +264,18 @@ void module_dcc_packet_set_speed( struct librailcan_module* module , struct dcc_
 
   if( speed == -1 ) // emergency stop
     packet->data[n] |= 0x01;
-  else if( packet->speed_steps == dcc_28 )
+  else if( speed > 0 )
   {
-    packet->data[n] |= speed >> 1;
-    if( speed & 0x01 )
-      packet->data[n] |= 0x10;
+    if( packet->speed_steps == dcc_28 )
+    {
+      speed += 3; // 0x04 => step 1
+      packet->data[n] |= speed >> 1;
+      if( speed & 0x01 )
+        packet->data[n] |= 0x10;
+    }
+    else
+      packet->data[n] |= speed + 1; // 0x02 => step 1
   }
-  else
-    packet->data[n] |= speed;
 
   if( speed == -1 && ( packet->speed_steps != dcc_14 || !( packet->data[n] & 0x10 ) ) ) // emergency stop (and FL disabled)
   {
