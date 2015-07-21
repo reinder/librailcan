@@ -135,7 +135,7 @@ void module_dcc_packet_list_remove( struct librailcan_module* module , struct dc
     {
       dcc->packet_list.count--;
       if( i < dcc->packet_list.count )
-        memmove( dcc->packet_list.items + i , dcc->packet_list.items + i + 1 , dcc->packet_list.count - i * sizeof( *(dcc->packet_list.items) ) );
+        memmove( dcc->packet_list.items + i , dcc->packet_list.items + i + 1 , ( dcc->packet_list.count - i ) * sizeof( *(dcc->packet_list.items) ) );
       break;
     }
 }
