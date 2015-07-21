@@ -385,7 +385,7 @@ void module_dcc_packet_set_function( struct librailcan_module* module , struct d
   else
     packet->data[n] &= ~mask;
 
-  if( ( packet->data[n] & mask_all ) == ( ( packet->type == dcc_speed_and_direction ) ? 0x01 : 0x00 ) )
+  if( ( packet->data[n] & mask_all ) != ( ( packet->type == dcc_speed_and_direction ) ? 0x01 : 0x00 ) )
   {
     if( packet->type == dcc_f13_f20 || packet->type == dcc_f21_f28 )
       packet->ttl = DCC_PACKET_TTL_F13_F28;
@@ -396,7 +396,7 @@ void module_dcc_packet_set_function( struct librailcan_module* module , struct d
   else
   {
     packet->ttl = DCC_PACKET_TTL_REMOVE;
-    packet->remove = false;
+    packet->remove = true;
   }
 
   module_dcc_packet_queue_move_front( module , packet );
