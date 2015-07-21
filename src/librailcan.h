@@ -22,6 +22,7 @@
 #ifndef _LIBRAILCAN_H_
 #define _LIBRAILCAN_H_
 
+#include <stddef.h>
 #ifdef STDINT_H
   #include STDINT_H
 #else
@@ -387,6 +388,17 @@ int librailcan_io_set_digital_output_changed_callback( struct librailcan_module*
 
 typedef void(*librailcan_dcc_get_packet_callback)( struct librailcan_module* module , const void** data , uint8_t* length );
 
+struct librailcan_dcc_stats
+{
+  size_t total_packets_send;
+  size_t reset_packets_send;
+  size_t user_packets_send;
+  size_t queue_packets_send;
+  size_t idle_packets_send;
+  size_t queue_packet_count;
+  size_t list_packet_count;
+};
+
 int librailcan_dcc_get_enabled( struct librailcan_module* module , uint8_t* value );
 
 int librailcan_dcc_set_enabled( struct librailcan_module* module , uint8_t value );
@@ -444,6 +456,8 @@ int librailcan_dcc_set_direction( struct librailcan_module* module , uint16_t ad
  * \return \ref librailcan_status "Status code".
  */
 int librailcan_dcc_set_function( struct librailcan_module* module , uint16_t address , uint8_t index , uint8_t value );
+
+int librailcan_dcc_get_stats( struct librailcan_module* module , struct librailcan_dcc_stats* stats , size_t stats_size );
 
 /**
  * \}

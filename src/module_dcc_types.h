@@ -78,6 +78,7 @@ struct module_dcc
   } packet_list;
   struct dcc_packet* packet_queue;
   librailcan_dcc_get_packet_callback get_packet_callback;
+  struct librailcan_dcc_stats stats;
 };
 
 #endif

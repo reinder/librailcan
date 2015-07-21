@@ -73,15 +73,21 @@ void module_dcc_received( struct librailcan_module* module , uint32_t id , int8_
       const void* dcc_data = NULL;
       uint8_t length = 0;
 
+      dcc->stats.total_packets_send++;
+
       if( !dcc->enabled ) // reset packet
       {
         static const uint8_t dcc_reset[] = { 0x00 , 0x00 };
         dcc_data = dcc_reset;
         length = sizeof( dcc_reset );
+
+        dcc->stats.reset_packets_send++;
       }
       else if( dcc->get_packet_callback )
       {
         dcc->get_packet_callback( module , &dcc_data , &length );
+
+        dcc->stats.user_packets_send++;
       }
       else if( dcc->packet_queue )
       {
@@ -99,12 +105,16 @@ void module_dcc_received( struct librailcan_module* module , uint32_t id , int8_
           else
             module_dcc_packet_queue_remove( module , packet );
         }
+
+        dcc->stats.queue_packets_send++;
       }
       else // idle packet
       {
         static const uint8_t dcc_idle[] = { 0xff , 0x00 };
         dcc_data = dcc_idle;
         length = sizeof( dcc_idle );
+
+        dcc->stats.idle_packets_send++;
       }
 
       if( length > 0 && length <= 8 )
@@ -255,6 +265,18 @@ int librailcan_dcc_set_function( struct librailcan_module* module , uint16_t add
     return r;
 
   module_dcc_packet_set_function( module , packet , index , value == LIBRAILCAN_DCC_FUNCTION_ENABLED );
+
+  return LIBRAILCAN_STATUS_SUCCESS;
+}
+
+int librailcan_dcc_get_stats( struct librailcan_module* module , struct librailcan_dcc_stats* stats , size_t stats_size )
+{
+  if( !module || !stats || stats_size < sizeof( *stats ) )
+    return LIBRAILCAN_STATUS_INVALID_PARAM;
+  else if( module->type != LIBRAILCAN_MODULETYPE_DCC )
+    return LIBRAILCAN_STATUS_NOT_SUPPORTED;
+
+  memcpy( stats , &((struct module_dcc*)module->private_data)->stats , sizeof( *stats ) );
 
   return LIBRAILCAN_STATUS_SUCCESS;
 }

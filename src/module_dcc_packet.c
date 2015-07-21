@@ -123,6 +123,8 @@ int module_dcc_packet_list_add( struct librailcan_module* module , struct dcc_pa
   dcc->packet_list.items[ dcc->packet_list.count ] = packet;
   dcc->packet_list.count++;
 
+  dcc->stats.list_packet_count = dcc->packet_list.count;
+
   return LIBRAILCAN_STATUS_SUCCESS;
 }
 
@@ -138,6 +140,8 @@ void module_dcc_packet_list_remove( struct librailcan_module* module , struct dc
         memmove( dcc->packet_list.items + i , dcc->packet_list.items + i + 1 , ( dcc->packet_list.count - i ) * sizeof( *(dcc->packet_list.items) ) );
       break;
     }
+
+  dcc->stats.list_packet_count = dcc->packet_list.count;
 }
 
 int module_dcc_packet_list_get( struct librailcan_module* module , uint16_t address , enum dcc_packet_type type , struct dcc_packet** packet )
@@ -170,6 +174,8 @@ void module_dcc_packet_queue_move_front( struct librailcan_module* module , stru
     dcc->packet_queue = packet;
     packet->previous = packet;
     packet->next = packet;
+
+    dcc->stats.queue_packet_count = 1;
   }
   else if( dcc->packet_queue != packet )
   {
@@ -179,6 +185,8 @@ void module_dcc_packet_queue_move_front( struct librailcan_module* module , stru
       packet->next->previous = packet->previous;
       packet->previous->next = packet->next;
     }
+    else
+      dcc->stats.queue_packet_count++;
 
     // Add it at front:
     packet->previous = dcc->packet_queue->previous;
@@ -193,14 +201,20 @@ void module_dcc_packet_queue_remove( struct librailcan_module* module , struct d
 {
   if( packet->previous && packet->next )
   {
+    struct module_dcc* dcc = module->private_data;
+
     if( packet->next == packet && packet->previous == packet ) // Only one packet in queue
     {
-      ((struct module_dcc*)module->private_data)->packet_queue = NULL;
+      dcc->packet_queue = NULL;
+
+      dcc->stats.queue_packet_count = 0;
     }
     else // Extract packet from queue:
     {
       packet->next->previous = packet->previous;
       packet->previous->next = packet->next;
+
+      dcc->stats.queue_packet_count--;
     }
 
     // Clear:
