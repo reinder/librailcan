@@ -54,8 +54,8 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
   switch( type )
   {
     case dcc_speed_and_direction:
-      (*packet)->speed_steps = dcc_14;
-      (*packet)->data[ n++ ] = 0x61; // Speed and direction instruction (01DFSSSS), D=fwd, S=ESTOP, F=off
+      (*packet)->speed_steps = dcc_28;
+      (*packet)->data[ n++ ] = 0x61; // Speed and direction instruction (01DSSSSS), D=fwd, S=ESTOP
       break;
 
     case dcc_f0_f4:
