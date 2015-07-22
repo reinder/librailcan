@@ -291,16 +291,7 @@ void module_dcc_packet_set_speed( struct librailcan_module* module , struct dcc_
       packet->data[n] |= speed + 1; // 0x02 => step 1
   }
 
-  if( speed == -1 && ( packet->speed_steps != dcc_14 || !( packet->data[n] & 0x10 ) ) ) // emergency stop (and FL disabled)
-  {
-    packet->ttl = DCC_PACKET_TTL_REMOVE;
-    packet->remove = true;
-  }
-  else
-  {
-    packet->ttl = DCC_PACKET_TTL_INFINITE;
-    packet->remove = false;
-  }
+  module_dcc_packet_update_ttl_and_flags( packet );
 
   module_dcc_packet_queue_move_front( module , packet );
 }
@@ -327,6 +318,8 @@ void module_dcc_packet_set_direction( struct librailcan_module* module , struct 
   else // dcc_reverse
     packet->data[n] &= ~mask;
 
+  module_dcc_packet_update_ttl_and_flags( packet );
+
   module_dcc_packet_queue_move_front( module , packet );
 }
 
@@ -348,14 +341,12 @@ void module_dcc_packet_set_function( struct librailcan_module* module , struct d
 {
   int n = DATA_INDEX( packet );
   uint8_t mask = 0;
-  uint8_t mask_all = 0;
 
   switch( packet->type )
   {
     case dcc_speed_and_direction:
       assert( index == 0 && packet->speed_steps == dcc_14 );
       mask = 0x10;
-      mask_all =0x1f;
       break;
 
     case dcc_f0_f4:
@@ -364,32 +355,27 @@ void module_dcc_packet_set_function( struct librailcan_module* module , struct d
         mask = 0x10;
       else
         mask = 1 << ( index - 1 );
-      mask_all = 0x1f;
       break;
 
     case dcc_f5_f8:
       assert( index >= 5 && index <= 8 );
       mask = 1 << ( index - 5 );
-      mask_all = 0x0f;
       break;
 
     case dcc_f9_f12:
       assert( index >= 9 && index <= 12 );
       mask = 1 << ( index - 9 );
-      mask_all = 0x0f;
       break;
 
     case dcc_f13_f20:
       assert( index >= 13 && index <= 20 );
       mask = 1 << ( index - 13 );
-      mask_all = 0xff;
       n++;
       break;
 
     case dcc_f21_f28:
       assert( index >= 21 && index <= 28 );
       mask = 1 << ( index - 21 );
-      mask_all = 0xff;
       n++;
       break;
   }
@@ -399,19 +385,45 @@ void module_dcc_packet_set_function( struct librailcan_module* module , struct d
   else
     packet->data[n] &= ~mask;
 
-  if( ( packet->data[n] & mask_all ) != ( ( packet->type == dcc_speed_and_direction ) ? 0x01 : 0x00 ) )
-  {
-    if( packet->type == dcc_f13_f20 || packet->type == dcc_f21_f28 )
-      packet->ttl = DCC_PACKET_TTL_F13_F28;
-    else
-      packet->ttl = DCC_PACKET_TTL_INFINITE;
-    packet->remove = false;
-  }
-  else
-  {
-    packet->ttl = DCC_PACKET_TTL_REMOVE;
-    packet->remove = true;
-  }
+  module_dcc_packet_update_ttl_and_flags( packet );
 
   module_dcc_packet_queue_move_front( module , packet );
+}
+
+void module_dcc_packet_update_ttl_and_flags( struct dcc_packet* packet )
+{
+  int n = DATA_INDEX( packet );
+
+  // Update remove flag:
+  switch( packet->type )
+  {
+    case dcc_speed_and_direction:
+      if( packet->speed_steps == dcc_128 )
+        packet->remove = ( ( packet->data[ n + 1 ] & 0x7f ) == 0x01 );
+      else
+        packet->remove = ( ( packet->data[ n ] & 0x1f ) == 0x01 );
+      break;
+
+    case dcc_f0_f4:
+      packet->remove = ( ( packet->data[ n ] & 0x1f ) == 0x00 );
+      break;
+
+    case dcc_f5_f8:
+    case dcc_f9_f12:
+      packet->remove = ( ( packet->data[ n ] & 0x0f ) == 0x00 );
+      break;
+
+    case dcc_f13_f20:
+    case dcc_f21_f28:
+      packet->remove = ( packet->data[ n + 1 ] == 0x00 );
+      break;
+  }
+
+  // Update ttl:
+  if( packet->remove )
+    packet->ttl = DCC_PACKET_TTL_REMOVE;
+  else if( packet->type == dcc_f13_f20 || packet->type == dcc_f21_f28 )
+    packet->ttl = DCC_PACKET_TTL_F13_F28;
+  else
+    packet->ttl = DCC_PACKET_TTL_INFINITE;
 }

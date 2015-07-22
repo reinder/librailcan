@@ -43,4 +43,6 @@ void module_dcc_packet_set_direction( struct librailcan_module* module , struct 
 enum dcc_packet_type module_dcc_get_type_by_function_index( uint8_t index );
 void module_dcc_packet_set_function( struct librailcan_module* module , struct dcc_packet* packet , uint8_t index , bool enabled );
 
+void module_dcc_packet_update_ttl_and_flags( struct dcc_packet* packet );
+
 #endif
