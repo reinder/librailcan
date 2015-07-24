@@ -1,0 +1,26 @@
+Source: librailcan
+Priority: optional
+Maintainer: Reinder Feenstra <reinderfeenstra@gmail.com>
+Build-Depends: debhelper (>= 9), autotools-dev
+Standards-Version: 3.9.6
+Section: libs
+Vcs-Git: https://github.com/reinder/librailcan.git
+Vcs-browser: https://github.com/reinder/librailcan
+Homepage: https://github.com/reinder/librailcan
+
+Package: librailcan-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: librailcan0 (= ${binary:Version}), ${misc:Depends}
+Description: RailCAN bus programming library development files
+ Library for interfacing a RailCAN bus without the knowlege of the RailCAN
+ protocol.
+
+Package: librailcan0
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: RailCAN bus programming library
+ Library for interfacing a RailCAN bus without the knowlege of the RailCAN
+ protocol.
