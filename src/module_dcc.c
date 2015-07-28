@@ -25,6 +25,7 @@
 #include "module_dcc_packet.h"
 
 #define MODULE_DCC_FUNCTION_INDEX_MAX  28
+#define MODULE_DCC_BASIC_ACCESSORY_OUTPUT_INDEX_MAX  7
 
 int module_dcc_init( struct librailcan_module* module , const railcan_message_info_t* info )
 {
@@ -163,9 +164,17 @@ int librailcan_dcc_set_get_packet_callback( struct librailcan_module* module , l
   return LIBRAILCAN_STATUS_SUCCESS;
 }
 
+static bool is_valid_address( uint16_t address )
+{
+  if( address & LIBRAILCAN_DCC_ADDRESS_LONG )
+    return ( address & ~LIBRAILCAN_DCC_ADDRESS_LONG ) <= 10239;
+  else // short
+    return ( address >= 1 ) && ( address <= 127 );
+}
+
 int librailcan_dcc_emergency_stop( struct librailcan_module* module , uint16_t address )
 {
-  if( !module )
+  if( !module || !is_valid_address( address ) )
     return LIBRAILCAN_STATUS_INVALID_PARAM;
   else if( module->type != LIBRAILCAN_MODULETYPE_DCC )
     return LIBRAILCAN_STATUS_NOT_SUPPORTED;
@@ -185,7 +194,7 @@ int librailcan_dcc_emergency_stop( struct librailcan_module* module , uint16_t a
 
 int librailcan_dcc_set_speed( struct librailcan_module* module , uint16_t address , uint8_t value )
 {
-  if( !module )
+  if( !module || !is_valid_address( address ) )
     return LIBRAILCAN_STATUS_INVALID_PARAM;
   else if( module->type != LIBRAILCAN_MODULETYPE_DCC )
     return LIBRAILCAN_STATUS_NOT_SUPPORTED;
@@ -229,7 +238,7 @@ int librailcan_dcc_set_speed( struct librailcan_module* module , uint16_t addres
 
 int librailcan_dcc_set_direction( struct librailcan_module* module , uint16_t address , uint8_t value )
 {
-  if( !module || ( value != LIBRAILCAN_DCC_DIRECTION_FORWARD && value != LIBRAILCAN_DCC_DIRECTIOM_REVERSE ) )
+  if( !module || !is_valid_address( address ) || ( value != LIBRAILCAN_DCC_DIRECTION_FORWARD && value != LIBRAILCAN_DCC_DIRECTIOM_REVERSE ) )
     return LIBRAILCAN_STATUS_INVALID_PARAM;
   else if( module->type != LIBRAILCAN_MODULETYPE_DCC )
     return LIBRAILCAN_STATUS_NOT_SUPPORTED;
@@ -249,7 +258,7 @@ int librailcan_dcc_set_direction( struct librailcan_module* module , uint16_t ad
 
 int librailcan_dcc_set_function( struct librailcan_module* module , uint16_t address , uint8_t index , uint8_t value )
 {
-  if( !module || index > MODULE_DCC_FUNCTION_INDEX_MAX || ( value != LIBRAILCAN_DCC_FUNCTION_DISABLED && value != LIBRAILCAN_DCC_FUNCTION_ENABLED ) )
+  if( !module || !is_valid_address( address ) || index > MODULE_DCC_FUNCTION_INDEX_MAX || ( value != LIBRAILCAN_DCC_FUNCTION_DISABLED && value != LIBRAILCAN_DCC_FUNCTION_ENABLED ) )
     return LIBRAILCAN_STATUS_INVALID_PARAM;
   else if( module->type != LIBRAILCAN_MODULETYPE_DCC )
     return LIBRAILCAN_STATUS_NOT_SUPPORTED;
@@ -265,6 +274,57 @@ int librailcan_dcc_set_function( struct librailcan_module* module , uint16_t add
     return r;
 
   module_dcc_packet_set_function( module , packet , index , value == LIBRAILCAN_DCC_FUNCTION_ENABLED );
+
+  return LIBRAILCAN_STATUS_SUCCESS;
+}
+
+int librailcan_dcc_set_basic_accessory_output( struct librailcan_module* module , uint16_t address , uint8_t index , uint8_t value )
+{
+  if( !module || address >= 1 << 9 || index > MODULE_DCC_BASIC_ACCESSORY_OUTPUT_INDEX_MAX || ( value != LIBRAILCAN_DCC_BASIC_ACCESSORY_OUTPUT_OFF && value != LIBRAILCAN_DCC_BASIC_ACCESSORY_OUTPUT_ON ) )
+    return LIBRAILCAN_STATUS_INVALID_PARAM;
+  else if( module->type != LIBRAILCAN_MODULETYPE_DCC )
+    return LIBRAILCAN_STATUS_NOT_SUPPORTED;
+
+  struct dcc_packet* packet;
+  int r;
+
+  address = ( address << 3 ) | index;
+
+  if( ( r = module_dcc_packet_list_get( module , address , dcc_basic_accessory , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+    return r;
+  else if( !packet && ( r = module_dcc_packet_create( module , address , dcc_basic_accessory , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+    return r;
+
+  if( value == LIBRAILCAN_DCC_BASIC_ACCESSORY_OUTPUT_ON )
+    packet->data[ 1 ] |= 0x08;
+
+  module_dcc_packet_update_ttl_and_flags( packet );
+
+  module_dcc_packet_queue_move_front( module , packet );
+
+  return LIBRAILCAN_STATUS_SUCCESS;
+}
+
+int librailcan_dcc_set_extended_accessory_state( struct librailcan_module* module , uint16_t address , uint8_t value )
+{
+  if( !module || address >= 1 << 11 || value > LIBRAILCAN_DCC_EXTENDED_ACCESSORY_STATE_MAX )
+    return LIBRAILCAN_STATUS_INVALID_PARAM;
+  else if( module->type != LIBRAILCAN_MODULETYPE_DCC )
+    return LIBRAILCAN_STATUS_NOT_SUPPORTED;
+
+  struct dcc_packet* packet;
+  int r;
+
+  if( ( r = module_dcc_packet_list_get( module , address , dcc_extended_accessory , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+    return r;
+  else if( !packet && ( r = module_dcc_packet_create( module , address , dcc_extended_accessory , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+    return r;
+
+  packet->data[ 2 ] = value;
+
+  module_dcc_packet_update_ttl_and_flags( packet );
+
+  module_dcc_packet_queue_move_front( module , packet );
 
   return LIBRAILCAN_STATUS_SUCCESS;
 }

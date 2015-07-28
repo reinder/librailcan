@@ -41,16 +41,40 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
   (*packet)->address = address;
   (*packet)->type = type;
 
-  if( address & LIBRAILCAN_DCC_ADDRESS_LONG )
+  // Setup address:
+  int n = 0;
+  switch( type )
   {
-    (*packet)->data[0] = 0x80 | ( ( address >> 8 ) & 0x3f );
-    (*packet)->data[1] = address & 0xff;
+    case dcc_speed_and_direction:
+    case dcc_f0_f4:
+    case dcc_f5_f8:
+    case dcc_f9_f12:
+    case dcc_f13_f20:
+    case dcc_f21_f28:
+      if( address & LIBRAILCAN_DCC_ADDRESS_LONG )
+      {
+        (*packet)->data[ n++ ] = 0x80 | ( ( address >> 8 ) & 0x3f ); // 10aaaaaa
+        (*packet)->data[ n++ ] = address & 0xff; // aaaaaaaa
+      }
+      else // short address
+        (*packet)->data[ n++ ] = address & 0x7f; // 0aaaaaaa
+      break;
+
+    case dcc_basic_accessory:
+      (*packet)->data[ n++ ] = 0x80 | ( address >> 6 ); // 10aaaaaa
+      (*packet)->data[ n   ] = 0x80 | ( ( address << 1 ) & 0x70 ); // 1aaacddd
+      break;
+
+    case dcc_extended_accessory:
+      (*packet)->data[ n++ ] = 0x80 | ( address >> 5 ); // 10aaaaaa
+      (*packet)->data[ n++ ] = ( ( address << 2 ) & 0x70 ) | ( ( address << 1 ) & 0x06 ) | 0x01; // 0aaa0aa1
+      break;
+
+    default:
+      assert( "invalid dcc_packet_type" );
   }
-  else // short address
-    (*packet)->data[0] = address & 0x7f;
 
-  int n = DATA_INDEX( *packet );
-
+  // Setup data:
   switch( type )
   {
     case dcc_speed_and_direction:
@@ -78,6 +102,14 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
     case dcc_f21_f28:
       (*packet)->data[ n++ ] = 0xdf; // Feature expansion instruction (110CCCCC), F21-F28 function control (CCCCC = 11111)
       (*packet)->data[ n++ ] = 0x00;
+      break;
+
+    case dcc_basic_accessory:
+      (*packet)->data[ n++ ] |= address & 0x7; // (1aaacddd), c=output enable, ddd=output number
+      break;
+
+    case dcc_extended_accessory:
+      (*packet)->data[ n++ ] = 0x00; // (000xxxxx), xxxxx=absolute stop aspect
       break;
   }
 
@@ -146,10 +178,6 @@ void module_dcc_packet_list_remove( struct librailcan_module* module , struct dc
 
 int module_dcc_packet_list_get( struct librailcan_module* module , uint16_t address , enum dcc_packet_type type , struct dcc_packet** packet )
 {
-  if( ( !( address & LIBRAILCAN_DCC_ADDRESS_LONG ) && ( address == 0 || address > 0x7f ) ) ||
-      ( ( address & LIBRAILCAN_DCC_ADDRESS_LONG ) && address > 0x3fff ) )
-    return LIBRAILCAN_STATUS_INVALID_PARAM;
-
   struct module_dcc* dcc = module->private_data;
 
   *packet = NULL;
@@ -417,10 +445,17 @@ void module_dcc_packet_update_ttl_and_flags( struct dcc_packet* packet )
     case dcc_f21_f28:
       packet->remove = ( packet->data[ n + 1 ] == 0x00 );
       break;
+
+    case dcc_basic_accessory:
+    case dcc_extended_accessory:
+      packet->remove = true;
+      break;
   }
 
   // Update ttl:
-  if( packet->remove )
+  if( packet->type == dcc_basic_accessory || packet->type == dcc_extended_accessory )
+    packet->ttl = DCC_PACKET_TTL_ACCESSORY;
+  else if( packet->remove )
     packet->ttl = DCC_PACKET_TTL_REMOVE;
   else if( packet->type == dcc_f13_f20 || packet->type == dcc_f21_f28 )
     packet->ttl = DCC_PACKET_TTL_F13_F28;
