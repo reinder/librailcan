@@ -373,25 +373,6 @@ int librailcan_io_set_digital_output_changed_callback( struct librailcan_module*
  * \{
  */
 
-#define LIBRAILCAN_DCC_DIRECTION_FORWARD  1
-#define LIBRAILCAN_DCC_DIRECTIOM_REVERSE  0
-
-#define LIBRAILCAN_DCC_ADDRESS_SHORT  0x0000 //!< 7 bit address
-#define LIBRAILCAN_DCC_ADDRESS_LONG   0x8000 //!< 14 bit address
-
-#define LIBRAILCAN_DCC_SPEED_128  0x80
-#define LIBRAILCAN_DCC_SPEED_28   0x40
-#define LIBRAILCAN_DCC_SPEED_14   0x20
-
-#define LIBRAILCAN_DCC_FUNCTION_DISABLED  0
-#define LIBRAILCAN_DCC_FUNCTION_ENABLED   1
-
-#define LIBRAILCAN_DCC_BASIC_ACCESSORY_OUTPUT_OFF  0
-#define LIBRAILCAN_DCC_BASIC_ACCESSORY_OUTPUT_ON   1
-
-#define LIBRAILCAN_DCC_EXTENDED_ACCESSORY_STATE_MIN   0
-#define LIBRAILCAN_DCC_EXTENDED_ACCESSORY_STATE_MAX   31
-
 typedef void(*librailcan_dcc_get_packet_callback)( struct librailcan_module* module , const void** data , uint8_t* length );
 
 struct librailcan_dcc_stats
@@ -418,56 +399,122 @@ int librailcan_dcc_set_enabled( struct librailcan_module* module , uint8_t value
  */
 int librailcan_dcc_set_get_packet_callback( struct librailcan_module* module , librailcan_dcc_get_packet_callback callback );
 
-/**
- * \defgroup module_dcc_decoder Decoder
- * \{
- */
+int librailcan_dcc_get_stats( struct librailcan_module* module , struct librailcan_dcc_stats* stats , size_t stats_size );
 
 /**
- * \brief ...
+ * \defgroup module_dcc_locomotive_decoders Locomotive decoders
+ * \{
+ *   \brief Functions to control locomotive decoders.
+ *
+ *   \section module_dcc_locomotive_decoders_addresses Addresses
+ *   Locomotive decoders can be addressed using short or long addresses.
+ *   To indicate the kind of address used, the address must be OR-ed with the #LIBRAILCAN_DCC_ADDRESS_SHORT or #LIBRAILCAN_DCC_ADDRESS_LONG flag.
+ *   The short address range is \c 1 ... \c 127, the long address range is \c 0 ... \c 10239.
+ */
+
+#define LIBRAILCAN_DCC_DIRECTION_FORWARD  1 //!< Forward operation. \see librailcan_dcc_set_direction
+#define LIBRAILCAN_DCC_DIRECTIOM_REVERSE  0 //!< Reverse operation. \see librailcan_dcc_set_direction
+
+#define LIBRAILCAN_DCC_ADDRESS_SHORT  0x0000 //!< 7 bit address
+#define LIBRAILCAN_DCC_ADDRESS_LONG   0x8000 //!< 14 bit address
+
+#define LIBRAILCAN_DCC_SPEED_128  0x80 //!< Flag to select 128 speed steps. \see librailcan_dcc_set_speed
+#define LIBRAILCAN_DCC_SPEED_28   0x40 //!< Flag to select 28 speed steps. \see librailcan_dcc_set_speed
+#define LIBRAILCAN_DCC_SPEED_14   0x20 //!< Flag to select 14 speed steps. \see librailcan_dcc_set_speed
+
+#define LIBRAILCAN_DCC_FUNCTION_DISABLED  0 //!< Disable function. \see librailcan_dcc_set_function
+#define LIBRAILCAN_DCC_FUNCTION_ENABLED   1 //!< Enable function. \see librailcan_dcc_set_function
+
+/**
+ * \brief Emergency stop locomotive.
  *
  * \param[in] module a module handle
- * \param[in] address ...
+ * \param[in] address a \ref module_dcc_locomotive_decoders_addresses "short or long address"
  * \return \ref librailcan_status "Status code".
+ * \par Example
+ * Emergency stop locomotive with long address 2414:
+ * \code{.c}
+ * r = librailcan_dcc_emergency_stop( module , LIBRAILCAN_DCC_ADDRESS_LONG | 2414 );
+ * \endcode
+ * \see librailcan_dcc_set_speed
  */
 int librailcan_dcc_emergency_stop( struct librailcan_module* module , uint16_t address );
 
 /**
- * \brief ...
+ * \brief Set locomotive speed.
  *
  * \param[in] module a module handle
- * \param[in] address a \ref module_dcc_address "DCC address"
- * \param[in] value ...
+ * \param[in] address a \ref module_dcc_locomotive_decoders_addresses "short or long address"
+ * \param[in] value decoder speed step OR-ed with speed step selection flag
  * \return \ref librailcan_status "Status code".
+ * \par Example
+ * Select speed step 5 of 28 for locomotive with short address 3:
+ * \code{.c}
+ * r = librailcan_dcc_set_speed( module , LIBRAILCAN_DCC_ADDRESS_SHORT | 3 , LIBRAILCAN_DCC_SPEED_28 | 5 );
+ * \endcode
+ * \see librailcan_dcc_emergency_stop
+ * \see LIBRAILCAN_DCC_SPEED_128
+ * \see LIBRAILCAN_DCC_SPEED_28
+ * \see LIBRAILCAN_DCC_SPEED_14
  */
 int librailcan_dcc_set_speed( struct librailcan_module* module , uint16_t address , uint8_t value );
 
 /**
- * \brief ...
+ * \brief Set locomotive direction.
  *
  * \param[in] module a module handle
- * \param[in] address a \ref module_dcc_address "DCC address"
- * \param[in] value ...
+ * \param[in] address a \ref module_dcc_locomotive_decoders_addresses "short or long address"
+ * \param[in] value #LIBRAILCAN_DCC_DIRECTION_FORWARD or #LIBRAILCAN_DCC_DIRECTIOM_REVERSE
  * \return \ref librailcan_status "Status code".
  */
 int librailcan_dcc_set_direction( struct librailcan_module* module , uint16_t address , uint8_t value );
 
 /**
- * \brief ...
+ * \brief Enable or disable locomotive function.
  *
  * \param[in] module a module handle
- * \param[in] address a \ref module_dcc_address "DCC address"
- * \param[in] index function index, \c 0 ... \c 28
- * \param[in] value ...
+ * \param[in] address a \ref module_dcc_locomotive_decoders_addresses "short or long address"
+ * \param[in] index function index: \c 0 ... \c 28
+ * \param[in] value #LIBRAILCAN_DCC_FUNCTION_ENABLED or #LIBRAILCAN_DCC_FUNCTION_DISABLED
  * \return \ref librailcan_status "Status code".
  */
 int librailcan_dcc_set_function( struct librailcan_module* module , uint16_t address , uint8_t index , uint8_t value );
 
+/**
+ * \}
+ * \defgroup module_dcc_accessory_decoders Accessory decoders
+ * \{
+ *   \brief Functions to control accessory decoders.
+ */
+
+#define LIBRAILCAN_DCC_BASIC_ACCESSORY_OUTPUT_OFF  0 //!< Enable output. \see librailcan_dcc_set_basic_accessory_output
+#define LIBRAILCAN_DCC_BASIC_ACCESSORY_OUTPUT_ON   1 //!< Disable output. \see librailcan_dcc_set_basic_accessory_output
+
+#define LIBRAILCAN_DCC_EXTENDED_ACCESSORY_STATE_MIN   0 //!< \see librailcan_dcc_set_extended_accessory_state
+#define LIBRAILCAN_DCC_EXTENDED_ACCESSORY_STATE_MAX   31 //!< \see librailcan_dcc_set_extended_accessory_state
+
+/**
+ * \brief Enable or disable basic accessory output.
+ *
+ * \param[in] module a module handle
+ * \param[in] address decoder address: \c 0 ... \c 511
+ * \param[in] index output index: \c 0 ... \c 7
+ * \param[in] value #LIBRAILCAN_DCC_BASIC_ACCESSORY_OUTPUT_OFF or #LIBRAILCAN_DCC_BASIC_ACCESSORY_OUTPUT_ON
+ * \return \ref librailcan_status "Status code".
+ */
 int librailcan_dcc_set_basic_accessory_output( struct librailcan_module* module , uint16_t address , uint8_t index , librailcan_bool value );
 
+/**
+ * \brief Set extended accessory state.
+ *
+ * \param[in] module a module handle
+ * \param[in] address decoder address: \c 0 ... \c 2047
+ * \param[in] value state: \c 0 ... \c 31
+ * \return \ref librailcan_status "Status code".
+ * \see LIBRAILCAN_DCC_EXTENDED_ACCESSORY_STATE_MIN
+ * \see LIBRAILCAN_DCC_EXTENDED_ACCESSORY_STATE_MAX
+ */
 int librailcan_dcc_set_extended_accessory_state( struct librailcan_module* module , uint16_t address , uint8_t value );
-
-int librailcan_dcc_get_stats( struct librailcan_module* module , struct librailcan_dcc_stats* stats , size_t stats_size );
 
 /**
  * \}
