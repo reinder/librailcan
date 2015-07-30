@@ -268,7 +268,18 @@ int librailcan_dcc_set_function( struct librailcan_module* module , uint16_t add
 
   enum dcc_packet_type type = module_dcc_get_type_by_function_index( index );
 
-  if( ( r = module_dcc_packet_list_get( module , address , type , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+  if( index == 0 )
+  {
+    if( ( r = module_dcc_packet_list_get( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+      return r;
+
+    if( packet && packet->speed_steps == dcc_14 )
+      type = dcc_speed_and_direction; // F0 is in speed and direction instruction when using 14 speed steps.
+    else
+      packet = NULL;
+  }
+
+  if( !packet && ( r = module_dcc_packet_list_get( module , address , type , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
   else if( !packet && ( r = module_dcc_packet_create( module , address , type , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
