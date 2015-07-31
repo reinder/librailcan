@@ -308,6 +308,8 @@ int librailcan_dcc_set_basic_accessory_output( struct librailcan_module* module 
 
   if( value == LIBRAILCAN_DCC_BASIC_ACCESSORY_OUTPUT_ON )
     packet->data[ 1 ] |= 0x08;
+  else
+    packet->data[ 1 ] &= ~0x08;
 
   module_dcc_packet_update_ttl_and_flags( packet );
 
