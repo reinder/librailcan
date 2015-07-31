@@ -25,6 +25,7 @@
 #include "module_dcc_types.h"
 
 int module_dcc_packet_create( struct librailcan_module* module , uint16_t address , enum dcc_packet_type type , struct dcc_packet** packet );
+int module_dcc_packet_clone( struct librailcan_module* module , struct dcc_packet* packet_src , struct dcc_packet** packet );
 void module_dcc_packet_delete( struct librailcan_module* module , struct dcc_packet* packet );
 
 int module_dcc_packet_list_add( struct librailcan_module* module , struct dcc_packet* packet );

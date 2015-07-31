@@ -29,12 +29,14 @@
 
 enum dcc_packet_type
 {
+  dcc_idle ,
   dcc_speed_and_direction ,
   dcc_f0_f4 ,
   dcc_f5_f8 ,
   dcc_f9_f12 ,
   dcc_f13_f20 ,
   dcc_f21_f28 ,
+  dcc_disposable ,
   dcc_basic_accessory ,
   dcc_extended_accessory
 };
@@ -55,6 +57,7 @@ enum dcc_direction
 #define DCC_PACKET_TTL_INFINITE   (-1)
 #define DCC_PACKET_TTL_REMOVE     10
 #define DCC_PACKET_TTL_F13_F28    5
+#define DCC_PACKET_TTL_DISPOSABLE 1
 #define DCC_PACKET_TTL_ACCESSORY  2
 
 struct dcc_packet

@@ -45,12 +45,17 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
   int n = 0;
   switch( type )
   {
+    case dcc_idle:
+      (*packet)->data[ n++ ] = 0xff;
+      break;
+
     case dcc_speed_and_direction:
     case dcc_f0_f4:
     case dcc_f5_f8:
     case dcc_f9_f12:
     case dcc_f13_f20:
     case dcc_f21_f28:
+    case dcc_disposable:
       if( address & LIBRAILCAN_DCC_ADDRESS_LONG )
       {
         (*packet)->data[ n++ ] = 0x80 | ( ( address >> 8 ) & 0x3f ); // 10aaaaaa
@@ -77,6 +82,10 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
   // Setup data:
   switch( type )
   {
+    case dcc_idle:
+      (*packet)->data[ n++ ] = 0x00;
+      break;
+
     case dcc_speed_and_direction:
       (*packet)->speed_steps = dcc_28;
       (*packet)->data[ n++ ] = 0x61; // Speed and direction instruction (01DSSSSS), D=fwd, S=ESTOP
@@ -104,6 +113,9 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
       (*packet)->data[ n++ ] = 0x00;
       break;
 
+    case dcc_disposable:
+      break;
+
     case dcc_basic_accessory:
       (*packet)->data[ n++ ] |= address & 0x7; // (1aaacddd), c=output enable, ddd=output number
       break;
@@ -111,17 +123,45 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
     case dcc_extended_accessory:
       (*packet)->data[ n++ ] = 0x00; // (000xxxxx), xxxxx=absolute stop aspect
       break;
+
+    default:
+      assert( "invalid dcc_packet_type" );
   }
 
   (*packet)->data_length = n;
-  (*packet)->ttl = DCC_PACKET_TTL_INFINITE;
 
-  int r = module_dcc_packet_list_add( module , *packet );
-  if( r != LIBRAILCAN_STATUS_SUCCESS )
+  if( type == dcc_idle || type == dcc_disposable )
   {
-    free( *packet );
-    return r;
+    (*packet)->ttl = DCC_PACKET_TTL_DISPOSABLE;
+    (*packet)->remove = true;
   }
+  else
+  {
+    (*packet)->ttl = DCC_PACKET_TTL_INFINITE;
+
+    int r = module_dcc_packet_list_add( module , *packet );
+    if( r != LIBRAILCAN_STATUS_SUCCESS )
+    {
+      free( *packet );
+      return r;
+    }
+  }
+
+  return LIBRAILCAN_STATUS_SUCCESS;
+}
+
+int module_dcc_packet_clone( struct librailcan_module* module , struct dcc_packet* packet_src , struct dcc_packet** packet )
+{
+  // Create a new packet:
+  *packet = malloc( sizeof( **packet ) );
+
+  if( !(*packet) )
+    return LIBRAILCAN_STATUS_NO_MEMORY;
+
+  memcpy( *packet , packet_src , sizeof( **packet ) );
+
+  (*packet)->previous = NULL;
+  (*packet)->next = NULL;
 
   return LIBRAILCAN_STATUS_SUCCESS;
 }

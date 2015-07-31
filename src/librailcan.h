@@ -481,6 +481,29 @@ int librailcan_dcc_set_direction( struct librailcan_module* module , uint16_t ad
 int librailcan_dcc_set_function( struct librailcan_module* module , uint16_t address , uint8_t index , uint8_t value );
 
 /**
+ * \brief Write locomotive configuration variable.
+ *
+ * \param[in] module a module handle
+ * \param[in] address a \ref module_dcc_locomotive_decoders_addresses "short or long address"
+ * \param[in] cv configuration variable address: \c 1 ... 1024
+ * \param[in] value configuration variable value
+ * \return \ref librailcan_status "Status code".
+ */
+int librailcan_dcc_write_cv( struct librailcan_module* module , uint16_t address , uint16_t cv , uint8_t value );
+
+/**
+ * \brief Write bit in locomotive configuration variable.
+ *
+ * \param[in] module a module handle
+ * \param[in] address a \ref module_dcc_locomotive_decoders_addresses "short or long address"
+ * \param[in] cv configuration variable address: \c 1 ... 1024
+ * \param[in] bit bit number: \c 0 ... \c 7
+ * \param[in] value #LIBRAILCAN_BOOL_TRUE or #LIBRAILCAN_BOOL_FALSE
+ * \return \ref librailcan_status "Status code".
+ */
+int librailcan_dcc_write_cv_bit( struct librailcan_module* module , uint16_t address , uint16_t cv , uint8_t bit , librailcan_bool value );
+
+/**
  * \}
  * \defgroup module_dcc_accessory_decoders Accessory decoders
  * \{

@@ -21,6 +21,11 @@
 
 #include "module_dcc.h"
 #include <stdlib.h>
+#ifdef HAVE_ASSERT_H
+#  include <assert.h>
+#else
+#  define assert( x )
+#endif
 #include "bus.h"
 #include "module_dcc_packet.h"
 
@@ -287,6 +292,123 @@ int librailcan_dcc_set_function( struct librailcan_module* module , uint16_t add
   module_dcc_packet_set_function( module , packet , index , value == LIBRAILCAN_DCC_FUNCTION_ENABLED );
 
   return LIBRAILCAN_STATUS_SUCCESS;
+}
+
+static bool is_valid_cv( uint16_t cv )
+{
+  return cv >= 1 && cv <= 1024;
+}
+
+int librailcan_dcc_write_cv( struct librailcan_module* module , uint16_t address , uint16_t cv , uint8_t value )
+{
+  if( !module || !is_valid_address( address ) || !is_valid_cv( cv ) )
+    return LIBRAILCAN_STATUS_INVALID_PARAM;
+  else if( module->type != LIBRAILCAN_MODULETYPE_DCC )
+    return LIBRAILCAN_STATUS_NOT_SUPPORTED;
+
+  struct dcc_packet* packet;
+  int r;
+
+  if( ( r = module_dcc_packet_create( module , address , dcc_disposable , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+    return r;
+
+  if( cv == 23 || cv == 24 )
+  {
+    uint8_t code;
+
+    switch( cv )
+    {
+      case 23: // Acceleration value
+        code = 0x2;
+        break;
+
+      case 24: // Deceleration value
+        code = 0x3;
+        break;
+
+      default:
+        assert( "invalid cv" );
+        r = LIBRAILCAN_STATUS_UNSUCCESSFUL;
+        goto error;
+    }
+
+    packet->data[ packet->data_length++ ] = 0xf0 | code; // Configuration Variable Access Instruction - Short Form (1111CCCC) - CCCC = code
+    packet->data[ packet->data_length++ ] = value;
+
+    module_dcc_packet_queue_move_front( module , packet );
+  }
+  else
+  {
+    cv--; // cv - 1 must be sent
+
+    packet->data[ packet->data_length++ ] = 0xec | ( cv >> 8 ); // Configuration Variable Access Instruction - Long Form (1110CCAA) - CC = Write byte
+    packet->data[ packet->data_length++ ] = cv & 0xff;
+    packet->data[ packet->data_length++ ] = value;
+
+    struct dcc_packet* packet_idle;
+    if( ( r = module_dcc_packet_create( module , 0 , dcc_idle , &packet_idle ) ) != LIBRAILCAN_STATUS_SUCCESS )
+      goto error;
+
+    struct dcc_packet* packet_clone;
+    if( ( r = module_dcc_packet_clone( module , packet , &packet_clone ) ) != LIBRAILCAN_STATUS_SUCCESS )
+    {
+      free( packet_idle ); // not in list and/or queue
+      goto error;
+    }
+
+    module_dcc_packet_queue_move_front( module , packet );
+    module_dcc_packet_queue_move_front( module , packet_idle );
+    module_dcc_packet_queue_move_front( module , packet_clone );
+  }
+
+  return LIBRAILCAN_STATUS_SUCCESS;
+
+error:
+  free( packet ); // not in list and/or queue
+
+  return r;
+}
+
+int librailcan_dcc_write_cv_bit( struct librailcan_module* module , uint16_t address , uint16_t cv , uint8_t bit , librailcan_bool value )
+{
+  if( !module || !is_valid_address( address ) || !is_valid_cv( cv ) || bit > 7 || ( value != LIBRAILCAN_BOOL_FALSE && value != LIBRAILCAN_BOOL_TRUE ) )
+    return LIBRAILCAN_STATUS_INVALID_PARAM;
+  else if( module->type != LIBRAILCAN_MODULETYPE_DCC )
+    return LIBRAILCAN_STATUS_NOT_SUPPORTED;
+
+  struct dcc_packet* packet;
+  int r;
+
+  if( ( r = module_dcc_packet_create( module , address , dcc_disposable , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
+    return r;
+
+  cv--; // cv - 1 must be sent
+
+  packet->data[ packet->data_length++ ] = 0xe8 | ( cv >> 8 ); // Configuration Variable Access Instruction - Long Form (1110CCAA) - CC = Bit manipulation
+  packet->data[ packet->data_length++ ] = cv & 0xff;
+  packet->data[ packet->data_length++ ] = 0xf0 | ( value ? 0x08 : 0x00 ) | bit; // 111CDBBB
+
+  struct dcc_packet* packet_idle;
+  if( ( r = module_dcc_packet_create( module , 0 , dcc_idle , &packet_idle ) ) != LIBRAILCAN_STATUS_SUCCESS )
+    goto error;
+
+  struct dcc_packet* packet_clone;
+  if( ( r = module_dcc_packet_clone( module , packet , &packet_clone ) ) != LIBRAILCAN_STATUS_SUCCESS )
+  {
+    free( packet_idle ); // not in list and/or queue
+    goto error;
+  }
+
+  module_dcc_packet_queue_move_front( module , packet );
+  module_dcc_packet_queue_move_front( module , packet_idle );
+  module_dcc_packet_queue_move_front( module , packet_clone );
+
+  return LIBRAILCAN_STATUS_SUCCESS;
+
+error:
+  free( packet ); // not in list and/or queue
+
+  return r;
 }
 
 int librailcan_dcc_set_basic_accessory_output( struct librailcan_module* module , uint16_t address , uint8_t index , uint8_t value )
