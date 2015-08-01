@@ -79,7 +79,7 @@ void module_dcc_received( struct librailcan_module* module , uint32_t id , int8_
       const void* dcc_data = NULL;
       uint8_t length = 0;
 
-      dcc->stats.total_packets_send++;
+      dcc->stats.total_packets_sent++;
 
       if( !dcc->enabled ) // reset packet
       {
@@ -87,13 +87,13 @@ void module_dcc_received( struct librailcan_module* module , uint32_t id , int8_
         dcc_data = dcc_reset;
         length = sizeof( dcc_reset );
 
-        dcc->stats.reset_packets_send++;
+        dcc->stats.reset_packets_sent++;
       }
       else if( dcc->get_packet_callback )
       {
         dcc->get_packet_callback( module , &dcc_data , &length );
 
-        dcc->stats.user_packets_send++;
+        dcc->stats.user_packets_sent++;
       }
       else if( dcc->packet_queue )
       {
@@ -112,7 +112,7 @@ void module_dcc_received( struct librailcan_module* module , uint32_t id , int8_
             module_dcc_packet_queue_remove( module , packet );
         }
 
-        dcc->stats.queue_packets_send++;
+        dcc->stats.queue_packets_sent++;
       }
       else // idle packet
       {
@@ -120,7 +120,7 @@ void module_dcc_received( struct librailcan_module* module , uint32_t id , int8_
         dcc_data = dcc_idle;
         length = sizeof( dcc_idle );
 
-        dcc->stats.idle_packets_send++;
+        dcc->stats.idle_packets_sent++;
       }
 
       if( length > 0 && length <= 8 )

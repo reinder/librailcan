@@ -377,11 +377,11 @@ typedef void(*librailcan_dcc_get_packet_callback)( struct librailcan_module* mod
 
 struct librailcan_dcc_stats
 {
-  size_t total_packets_send;
-  size_t reset_packets_send;
-  size_t user_packets_send;
-  size_t queue_packets_send;
-  size_t idle_packets_send;
+  size_t total_packets_sent;
+  size_t reset_packets_sent;
+  size_t user_packets_sent;
+  size_t queue_packets_sent;
+  size_t idle_packets_sent;
   size_t queue_packet_count;
   size_t list_packet_count;
 };
