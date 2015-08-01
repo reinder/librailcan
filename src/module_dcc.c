@@ -29,7 +29,7 @@
 #include "bus.h"
 #include "module_dcc_packet.h"
 
-#define MODULE_DCC_FUNCTION_INDEX_MAX  28
+#define MODULE_DCC_LOCOMOTIVE_FUNCTION_INDEX_MAX  28
 #define MODULE_DCC_BASIC_ACCESSORY_OUTPUT_INDEX_MAX  7
 
 int module_dcc_init( struct librailcan_module* module , const railcan_message_info_t* info )
@@ -171,13 +171,13 @@ int librailcan_dcc_set_get_packet_callback( struct librailcan_module* module , l
 
 static bool is_valid_address( uint16_t address )
 {
-  if( address & LIBRAILCAN_DCC_ADDRESS_LONG )
-    return ( address & ~LIBRAILCAN_DCC_ADDRESS_LONG ) <= 10239;
+  if( address & LIBRAILCAN_DCC_LOCOMOTIVE_ADDRESS_LONG )
+    return ( address & ~LIBRAILCAN_DCC_LOCOMOTIVE_ADDRESS_LONG ) <= 10239;
   else // short
     return ( address >= 1 ) && ( address <= 127 );
 }
 
-int librailcan_dcc_emergency_stop( struct librailcan_module* module , uint16_t address )
+int librailcan_dcc_locomotive_emergency_stop( struct librailcan_module* module , uint16_t address )
 {
   if( !module || !is_valid_address( address ) )
     return LIBRAILCAN_STATUS_INVALID_PARAM;
@@ -197,7 +197,7 @@ int librailcan_dcc_emergency_stop( struct librailcan_module* module , uint16_t a
   return LIBRAILCAN_STATUS_SUCCESS;
 }
 
-int librailcan_dcc_set_speed( struct librailcan_module* module , uint16_t address , uint8_t value )
+int librailcan_dcc_locomotive_set_speed( struct librailcan_module* module , uint16_t address , uint8_t value )
 {
   if( !module || !is_valid_address( address ) )
     return LIBRAILCAN_STATUS_INVALID_PARAM;
@@ -215,17 +215,17 @@ int librailcan_dcc_set_speed( struct librailcan_module* module , uint16_t addres
   int8_t speed;
   enum dcc_speed_steps speed_steps;
 
-  if( value & LIBRAILCAN_DCC_SPEED_128 )
+  if( value & LIBRAILCAN_DCC_LOCOMOTIVE_SPEED_128 )
   {
     speed_steps = dcc_128;
     speed = value & 0x7f;
   }
-  else if( ( value & 0xc0 ) == LIBRAILCAN_DCC_SPEED_28 )
+  else if( ( value & 0xc0 ) == LIBRAILCAN_DCC_LOCOMOTIVE_SPEED_28 )
   {
     speed_steps = dcc_28;
     speed = value & 0x1f;
   }
-  else if( ( value & 0xe0 ) == LIBRAILCAN_DCC_SPEED_14 )
+  else if( ( value & 0xe0 ) == LIBRAILCAN_DCC_LOCOMOTIVE_SPEED_14 )
   {
     speed_steps = dcc_14;
     speed = value & 0x0f;
@@ -241,9 +241,9 @@ int librailcan_dcc_set_speed( struct librailcan_module* module , uint16_t addres
   return LIBRAILCAN_STATUS_SUCCESS;
 }
 
-int librailcan_dcc_set_direction( struct librailcan_module* module , uint16_t address , uint8_t value )
+int librailcan_dcc_locomotive_set_direction( struct librailcan_module* module , uint16_t address , uint8_t value )
 {
-  if( !module || !is_valid_address( address ) || ( value != LIBRAILCAN_DCC_DIRECTION_FORWARD && value != LIBRAILCAN_DCC_DIRECTIOM_REVERSE ) )
+  if( !module || !is_valid_address( address ) || ( value != LIBRAILCAN_DCC_LOCOMOTIVE_DIRECTION_FORWARD && value != LIBRAILCAN_DCC_LOCOMOTIVE_DIRECTIOM_REVERSE ) )
     return LIBRAILCAN_STATUS_INVALID_PARAM;
   else if( module->type != LIBRAILCAN_MODULETYPE_DCC )
     return LIBRAILCAN_STATUS_NOT_SUPPORTED;
@@ -256,14 +256,14 @@ int librailcan_dcc_set_direction( struct librailcan_module* module , uint16_t ad
   else if( !packet && ( r = module_dcc_packet_create( module , address , dcc_speed_and_direction , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
 
-  module_dcc_packet_set_direction( module , packet , value == LIBRAILCAN_DCC_DIRECTION_FORWARD ? dcc_forward : dcc_reverse );
+  module_dcc_packet_set_direction( module , packet , value == LIBRAILCAN_DCC_LOCOMOTIVE_DIRECTION_FORWARD ? dcc_forward : dcc_reverse );
 
   return LIBRAILCAN_STATUS_SUCCESS;
 }
 
-int librailcan_dcc_set_function( struct librailcan_module* module , uint16_t address , uint8_t index , uint8_t value )
+int librailcan_dcc_locomotive_set_function( struct librailcan_module* module , uint16_t address , uint8_t index , uint8_t value )
 {
-  if( !module || !is_valid_address( address ) || index > MODULE_DCC_FUNCTION_INDEX_MAX || ( value != LIBRAILCAN_DCC_FUNCTION_DISABLED && value != LIBRAILCAN_DCC_FUNCTION_ENABLED ) )
+  if( !module || !is_valid_address( address ) || index > MODULE_DCC_LOCOMOTIVE_FUNCTION_INDEX_MAX || ( value != LIBRAILCAN_DCC_LOCOMOTIVE_FUNCTION_DISABLED && value != LIBRAILCAN_DCC_LOCOMOTIVE_FUNCTION_ENABLED ) )
     return LIBRAILCAN_STATUS_INVALID_PARAM;
   else if( module->type != LIBRAILCAN_MODULETYPE_DCC )
     return LIBRAILCAN_STATUS_NOT_SUPPORTED;
@@ -289,7 +289,7 @@ int librailcan_dcc_set_function( struct librailcan_module* module , uint16_t add
   else if( !packet && ( r = module_dcc_packet_create( module , address , type , &packet ) ) != LIBRAILCAN_STATUS_SUCCESS )
     return r;
 
-  module_dcc_packet_set_function( module , packet , index , value == LIBRAILCAN_DCC_FUNCTION_ENABLED );
+  module_dcc_packet_set_function( module , packet , index , value == LIBRAILCAN_DCC_LOCOMOTIVE_FUNCTION_ENABLED );
 
   return LIBRAILCAN_STATUS_SUCCESS;
 }
@@ -299,7 +299,7 @@ static bool is_valid_cv( uint16_t cv )
   return cv >= 1 && cv <= 1024;
 }
 
-int librailcan_dcc_write_cv( struct librailcan_module* module , uint16_t address , uint16_t cv , uint8_t value )
+int librailcan_dcc_locomotive_write_cv( struct librailcan_module* module , uint16_t address , uint16_t cv , uint8_t value )
 {
   if( !module || !is_valid_address( address ) || !is_valid_cv( cv ) )
     return LIBRAILCAN_STATUS_INVALID_PARAM;
@@ -369,7 +369,7 @@ error:
   return r;
 }
 
-int librailcan_dcc_write_cv_bit( struct librailcan_module* module , uint16_t address , uint16_t cv , uint8_t bit , librailcan_bool value )
+int librailcan_dcc_locomotive_write_cv_bit( struct librailcan_module* module , uint16_t address , uint16_t cv , uint8_t bit , librailcan_bool value )
 {
   if( !module || !is_valid_address( address ) || !is_valid_cv( cv ) || bit > 7 || ( value != LIBRAILCAN_BOOL_FALSE && value != LIBRAILCAN_BOOL_TRUE ) )
     return LIBRAILCAN_STATUS_INVALID_PARAM;
@@ -411,7 +411,7 @@ error:
   return r;
 }
 
-int librailcan_dcc_set_basic_accessory_output( struct librailcan_module* module , uint16_t address , uint8_t index , uint8_t value )
+int librailcan_dcc_basic_accessory_set_output( struct librailcan_module* module , uint16_t address , uint8_t index , uint8_t value )
 {
   if( !module || address >= 1 << 9 || index > MODULE_DCC_BASIC_ACCESSORY_OUTPUT_INDEX_MAX || ( value != LIBRAILCAN_DCC_BASIC_ACCESSORY_OUTPUT_OFF && value != LIBRAILCAN_DCC_BASIC_ACCESSORY_OUTPUT_ON ) )
     return LIBRAILCAN_STATUS_INVALID_PARAM;
@@ -440,7 +440,7 @@ int librailcan_dcc_set_basic_accessory_output( struct librailcan_module* module 
   return LIBRAILCAN_STATUS_SUCCESS;
 }
 
-int librailcan_dcc_set_extended_accessory_state( struct librailcan_module* module , uint16_t address , uint8_t value )
+int librailcan_dcc_extended_accessory_set_state( struct librailcan_module* module , uint16_t address , uint8_t value )
 {
   if( !module || address >= 1 << 11 || value > LIBRAILCAN_DCC_EXTENDED_ACCESSORY_STATE_MAX )
     return LIBRAILCAN_STATUS_INVALID_PARAM;

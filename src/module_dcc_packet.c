@@ -56,7 +56,7 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
     case dcc_f13_f20:
     case dcc_f21_f28:
     case dcc_disposable:
-      if( address & LIBRAILCAN_DCC_ADDRESS_LONG )
+      if( address & LIBRAILCAN_DCC_LOCOMOTIVE_ADDRESS_LONG )
       {
         (*packet)->data[ n++ ] = 0x80 | ( ( address >> 8 ) & 0x3f ); // 10aaaaaa
         (*packet)->data[ n++ ] = address & 0xff; // aaaaaaaa
