@@ -11,6 +11,9 @@ librailcan_la_SOURCES = \
 	module.c \
 	module_dcc.h \
 	module_dcc.c \
+	module_dcc_locomotive.c \
+	module_dcc_basic_accessory.c \
+	module_dcc_extended_accessory.c \
 	module_dcc_packet.h \
 	module_dcc_packet.c \
 	module_dcc_types.h \
