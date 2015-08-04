@@ -66,8 +66,9 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
       break;
 
     case dcc_basic_accessory:
-      (*packet)->data[ n++ ] = 0x80 | ( address >> 3 ); // 10aaaaaa
-      (*packet)->data[ n   ] = 0x80 | ( ( address << 4 ) & 0x70 ); // 1aaacddd
+      // NOTE: address = 0000 aaaa aaaa addd
+      (*packet)->data[ n++ ] = 0x80 | ( address >> 6 ); // 10aaaaaa
+      (*packet)->data[ n   ] = 0x80 | ( ( address << 1 ) & 0x70 ); // 1aaacddd
       break;
 
     case dcc_extended_accessory:
