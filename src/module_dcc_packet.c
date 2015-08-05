@@ -55,7 +55,7 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
     case dcc_f9_f12:
     case dcc_f13_f20:
     case dcc_f21_f28:
-    case dcc_disposable:
+    case dcc_locomotive_disposable:
       if( address & LIBRAILCAN_DCC_LOCOMOTIVE_ADDRESS_LONG )
       {
         (*packet)->data[ n++ ] = 0x80 | ( ( address >> 8 ) & 0x3f ); // 10aaaaaa
@@ -71,7 +71,13 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
       (*packet)->data[ n   ] = 0x80 | ( ( address << 1 ) & 0x70 ); // 1aaacddd
       break;
 
+    case dcc_basic_accessory_disposable:
+      (*packet)->data[ n++ ] = 0x80 | ( address >> 3 ); // 10aaaaaa
+      (*packet)->data[ n++ ] = 0x80 | ( ( address << 4 ) & 0x70 ); // 1aaacddd
+      break;
+
     case dcc_extended_accessory:
+    case dcc_extended_accessory_disposable:
       (*packet)->data[ n++ ] = 0x80 | ( address >> 5 ); // 10aaaaaa
       (*packet)->data[ n++ ] = ( ( address << 2 ) & 0x70 ) | ( ( address << 1 ) & 0x06 ) | 0x01; // 0aaa0aa1
       break;
@@ -114,15 +120,21 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
       (*packet)->data[ n++ ] = 0x00;
       break;
 
-    case dcc_disposable:
+    case dcc_locomotive_disposable:
       break;
 
     case dcc_basic_accessory:
       (*packet)->data[ n++ ] |= address & 0x7; // (1aaacddd), c=output enable, ddd=output number
       break;
 
+    case dcc_basic_accessory_disposable:
+      break;
+
     case dcc_extended_accessory:
       (*packet)->data[ n++ ] = 0x00; // (000xxxxx), xxxxx=absolute stop aspect
+      break;
+
+    case dcc_extended_accessory_disposable:
       break;
 
     default:
@@ -131,20 +143,27 @@ int module_dcc_packet_create( struct librailcan_module* module , uint16_t addres
 
   (*packet)->data_length = n;
 
-  if( type == dcc_idle || type == dcc_disposable )
+  switch( type )
   {
-    (*packet)->ttl = DCC_PACKET_TTL_DISPOSABLE;
-    (*packet)->remove = true;
-  }
-  else
-  {
-    (*packet)->ttl = DCC_PACKET_TTL_INFINITE;
+    case dcc_idle:
+    case dcc_locomotive_disposable:
+    case dcc_basic_accessory_disposable:
+    case dcc_extended_accessory_disposable:
+      (*packet)->ttl = DCC_PACKET_TTL_DISPOSABLE;
+      (*packet)->remove = true;
+      break;
 
-    int r = module_dcc_packet_list_add( module , *packet );
-    if( r != LIBRAILCAN_STATUS_SUCCESS )
+    default:
     {
-      free( *packet );
-      return r;
+      (*packet)->ttl = DCC_PACKET_TTL_INFINITE;
+
+      int r = module_dcc_packet_list_add( module , *packet );
+      if( r != LIBRAILCAN_STATUS_SUCCESS )
+      {
+        free( *packet );
+        return r;
+      }
+      break;
     }
   }
 
@@ -502,4 +521,59 @@ void module_dcc_packet_update_ttl_and_flags( struct dcc_packet* packet )
     packet->ttl = DCC_PACKET_TTL_F13_F28;
   else
     packet->ttl = DCC_PACKET_TTL_INFINITE;
+}
+
+static int module_dcc_program_cv( struct librailcan_module* module , struct dcc_packet* packet )
+{
+  struct dcc_packet* packet_idle;
+  struct dcc_packet* packet_clone;
+  int r;
+
+  if( ( r = module_dcc_packet_create( module , 0 , dcc_idle , &packet_idle ) ) != LIBRAILCAN_STATUS_SUCCESS )
+    return r;
+
+  if( ( r = module_dcc_packet_clone( module , packet , &packet_clone ) ) != LIBRAILCAN_STATUS_SUCCESS )
+  {
+    free( packet_idle ); // not in list and/or queue
+    return r;
+  }
+
+  module_dcc_packet_queue_move_front( module , packet );
+  module_dcc_packet_queue_move_front( module , packet_idle );
+  module_dcc_packet_queue_move_front( module , packet_clone );
+
+  return LIBRAILCAN_STATUS_SUCCESS;
+}
+
+static bool is_valid_cv( uint16_t cv )
+{
+  return cv >= 1 && cv <= 1024;
+}
+
+int module_dcc_write_cv( struct librailcan_module* module , struct dcc_packet* packet , uint16_t cv , uint8_t value )
+{
+  if( !is_valid_cv( cv ) )
+    return LIBRAILCAN_STATUS_INVALID_PARAM;
+
+  cv--; // cv - 1 must be sent
+
+  packet->data[ packet->data_length++ ] = 0xec | ( cv >> 8 ); // Configuration Variable Access Instruction - Long Form (1110CCAA) - CC = Write byte
+  packet->data[ packet->data_length++ ] = cv & 0xff;
+  packet->data[ packet->data_length++ ] = value;
+
+  return module_dcc_program_cv( module , packet );
+}
+
+int module_dcc_write_cv_bit( struct librailcan_module* module , struct dcc_packet* packet , uint16_t cv , uint8_t bit , librailcan_bool value )
+{
+  if( !is_valid_cv( cv ) || bit > 7 || ( value != LIBRAILCAN_BOOL_FALSE && value != LIBRAILCAN_BOOL_TRUE ) )
+    return LIBRAILCAN_STATUS_INVALID_PARAM;
+
+  cv--; // cv - 1 must be sent
+
+  packet->data[ packet->data_length++ ] = 0xe8 | ( cv >> 8 ); // Configuration Variable Access Instruction - Long Form (1110CCAA) - CC = Bit manipulation
+  packet->data[ packet->data_length++ ] = cv & 0xff;
+  packet->data[ packet->data_length++ ] = 0xf0 | ( value ? 0x08 : 0x00 ) | bit; // 111CDBBB
+
+  return module_dcc_program_cv( module , packet );
 }

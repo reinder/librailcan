@@ -46,4 +46,7 @@ void module_dcc_packet_set_function( struct librailcan_module* module , struct d
 
 void module_dcc_packet_update_ttl_and_flags( struct dcc_packet* packet );
 
+int module_dcc_write_cv( struct librailcan_module* module , struct dcc_packet* packet , uint16_t cv , uint8_t value );
+int module_dcc_write_cv_bit( struct librailcan_module* module , struct dcc_packet* packet , uint16_t cv , uint8_t bit , librailcan_bool value );
+
 #endif

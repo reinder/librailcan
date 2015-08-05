@@ -528,6 +528,31 @@ int librailcan_dcc_locomotive_write_cv_bit( struct librailcan_module* module , u
 int librailcan_dcc_basic_accessory_set_output( struct librailcan_module* module , uint16_t address , uint8_t index , librailcan_bool value );
 
 /**
+ * \brief Write basic accessory (output) configuration variable.
+ *
+ * \param[in] module a module handle
+ * \param[in] address decoder address: \c 0 ... \c 511
+ * \param[in] index output index: \c 0 ... \c 7, or \c -1 for the decoder
+ * \param[in] cv configuration variable address: \c 1 ... 1024
+ * \param[in] value configuration variable value
+ * \return \ref librailcan_status "Status code".
+ */
+int librailcan_dcc_basic_accessory_write_cv( struct librailcan_module* module , uint16_t address , int8_t index , uint16_t cv , uint8_t value );
+
+/**
+ * \brief Write bit in basic accessory (output) configuration variable.
+ *
+ * \param[in] module a module handle
+ * \param[in] address decoder address: \c 0 ... \c 511
+ * \param[in] index output index: \c 0 ... \c 7, or \c -1 for the decoder
+ * \param[in] cv configuration variable address: \c 1 ... 1024
+ * \param[in] bit bit number: \c 0 ... \c 7
+ * \param[in] value #LIBRAILCAN_BOOL_TRUE or #LIBRAILCAN_BOOL_FALSE
+ * \return \ref librailcan_status "Status code".
+ */
+int librailcan_dcc_basic_accessory_write_cv_bit( struct librailcan_module* module , uint16_t address , int8_t index , uint16_t cv , uint8_t bit , librailcan_bool value );
+
+/**
  * \brief Set extended accessory state.
  *
  * \param[in] module a module handle
@@ -538,6 +563,29 @@ int librailcan_dcc_basic_accessory_set_output( struct librailcan_module* module 
  * \see LIBRAILCAN_DCC_EXTENDED_ACCESSORY_STATE_MAX
  */
 int librailcan_dcc_extended_accessory_set_state( struct librailcan_module* module , uint16_t address , uint8_t value );
+
+/**
+ * \brief Write extended accessory configuration variable.
+ *
+ * \param[in] module a module handle
+ * \param[in] address decoder address: \c 0 ... \c 2047
+ * \param[in] cv configuration variable address: \c 1 ... 1024
+ * \param[in] value configuration variable value
+ * \return \ref librailcan_status "Status code".
+ */
+int librailcan_dcc_extended_accessory_write_cv( struct librailcan_module* module , uint16_t address , uint16_t cv , uint8_t value );
+
+/**
+ * \brief Write bit in extended accessory configuration variable.
+ *
+ * \param[in] module a module handle
+ * \param[in] address decoder address: \c 0 ... \c 2047
+ * \param[in] cv configuration variable address: \c 1 ... 1024
+ * \param[in] bit bit number: \c 0 ... \c 7
+ * \param[in] value #LIBRAILCAN_BOOL_TRUE or #LIBRAILCAN_BOOL_FALSE
+ * \return \ref librailcan_status "Status code".
+ */
+int librailcan_dcc_extended_accessory_write_cv_bit( struct librailcan_module* module , uint16_t address , uint16_t cv , uint8_t bit , librailcan_bool value );
 
 /**
  * \}

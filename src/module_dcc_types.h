@@ -36,9 +36,11 @@ enum dcc_packet_type
   dcc_f9_f12 ,
   dcc_f13_f20 ,
   dcc_f21_f28 ,
-  dcc_disposable ,
+  dcc_locomotive_disposable ,
   dcc_basic_accessory ,
-  dcc_extended_accessory
+  dcc_basic_accessory_disposable  ,
+  dcc_extended_accessory ,
+  dcc_extended_accessory_disposable
 };
 
 enum dcc_speed_steps
