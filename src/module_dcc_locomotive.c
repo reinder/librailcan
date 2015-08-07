@@ -124,7 +124,7 @@ int librailcan_dcc_locomotive_set_function( struct librailcan_module* module , u
   else if( module->type != LIBRAILCAN_MODULETYPE_DCC )
     return LIBRAILCAN_STATUS_NOT_SUPPORTED;
 
-  struct dcc_packet* packet;
+  struct dcc_packet* packet = NULL;
   int r;
 
   enum dcc_packet_type type = module_dcc_get_type_by_function_index( index );
