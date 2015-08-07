@@ -151,6 +151,8 @@ int librailcan_bus_get_poll_events( struct librailcan_bus* bus , short* events )
   *events = POLLIN;
   if( bus->socketcan.send_queue.front )
     *events |= POLLOUT;
+
+  return LIBRAILCAN_STATUS_SUCCESS;
 #else
   return LIBRAILCAN_STATUS_NOT_SUPPORTED;
 #endif
