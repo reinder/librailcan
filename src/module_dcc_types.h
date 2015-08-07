@@ -84,6 +84,7 @@ struct module_dcc
     size_t length;
     size_t count;
   } packet_list;
+  struct dcc_packet* packet_priority_queue;
   struct dcc_packet* packet_queue;
   librailcan_dcc_get_packet_callback get_packet_callback;
   struct librailcan_dcc_stats stats;

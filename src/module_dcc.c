@@ -48,6 +48,13 @@ void module_dcc_close( struct librailcan_module* module )
 {
   struct module_dcc* dcc = module->private_data;
 
+  while( dcc->packet_priority_queue )
+  {
+    struct dcc_packet* packet = dcc->packet_priority_queue;
+    dcc->packet_priority_queue = packet->next;
+    free( packet );
+  }
+
   for( int i = 0 ; i < dcc->packet_list.count ; i++ )
     free( dcc->packet_list.items[i] );
   free( dcc->packet_list.items );
@@ -86,6 +93,22 @@ void module_dcc_received( struct librailcan_module* module , uint32_t id , int8_
         dcc->get_packet_callback( module , &dcc_data , &length );
 
         dcc->stats.user_packets_sent++;
+      }
+      else if( dcc->packet_priority_queue )
+      {
+        struct dcc_packet* packet = dcc->packet_priority_queue;
+
+        dcc_data = packet->data;
+        length = packet->data_length;
+
+        if( --packet->ttl <= 0 )
+        {
+          dcc->packet_priority_queue = packet->next;
+          dcc->stats.priority_queue_packet_count--;
+          free( packet );
+        }
+
+        dcc->stats.priority_queue_packets_sent++;
       }
       else if( dcc->packet_queue )
       {

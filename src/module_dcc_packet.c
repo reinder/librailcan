@@ -253,6 +253,25 @@ int module_dcc_packet_list_get( struct librailcan_module* module , uint16_t addr
   return LIBRAILCAN_STATUS_SUCCESS;
 }
 
+void module_dcc_priority_queue_push_back( struct librailcan_module* module , struct dcc_packet* packet )
+{
+  struct module_dcc* dcc = module->private_data;
+
+  dcc->stats.priority_queue_packet_count++;
+
+  if( dcc->packet_priority_queue )
+  {
+    struct dcc_packet* p = dcc->packet_priority_queue;
+
+    while( p->next )
+      p = p->next;
+
+    p->next = packet;
+  }
+  else
+    dcc->packet_priority_queue = packet;
+}
+
 void module_dcc_packet_queue_move_front( struct librailcan_module* module , struct dcc_packet* packet )
 {
   struct module_dcc* dcc = module->private_data;
@@ -538,9 +557,9 @@ static int module_dcc_program_cv( struct librailcan_module* module , struct dcc_
     return r;
   }
 
-  module_dcc_packet_queue_move_front( module , packet );
-  module_dcc_packet_queue_move_front( module , packet_idle );
-  module_dcc_packet_queue_move_front( module , packet_clone );
+  module_dcc_priority_queue_push_back( module , packet );
+  module_dcc_priority_queue_push_back( module , packet_idle );
+  module_dcc_priority_queue_push_back( module , packet_clone );
 
   return LIBRAILCAN_STATUS_SUCCESS;
 }
