@@ -196,7 +196,7 @@ int librailcan_io_set_digital_input_changed_callback( struct librailcan_module* 
 
   ((struct module_io*)module->private_data)->digital_input_changed_callback = callback;
 
-  return LIBRAILCAN_STATUS_NOT_SUPPORTED;
+  return LIBRAILCAN_STATUS_SUCCESS;
 }
 
 int librailcan_io_get_digital_output_count( struct librailcan_module* module , unsigned int* count )
