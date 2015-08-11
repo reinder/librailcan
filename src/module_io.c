@@ -126,7 +126,7 @@ void module_io_received( struct librailcan_module* module , uint32_t id , int8_t
       const uint_fast8_t len = min( io->digital_input_count , dlc * 8 );
       for( uint_fast8_t i = 0 ; i < len ; i++ )
       {
-        librailcan_tristate value = ( ((uint8_t*)data)[ i / 8 ] & ( 1 << ( 7 - ( i % 8 ) ) ) ) ? LIBRAILCAN_TRISTATE_TRUE : LIBRAILCAN_TRISTATE_FALSE;
+        librailcan_tristate value = ( ((uint8_t*)data)[ i / 8 ] & ( 1 << ( i % 8 ) ) ) ? LIBRAILCAN_TRISTATE_TRUE : LIBRAILCAN_TRISTATE_FALSE;
         if( value != io->digital_inputs[ i ] )
         {
           io->digital_inputs[ i ] = value;
@@ -144,7 +144,7 @@ void module_io_received( struct librailcan_module* module , uint32_t id , int8_t
       const uint_fast8_t len = min( io->digital_output_count , dlc * 8 );
       for( uint_fast8_t i = 0 ; i < len ; i++ )
       {
-        librailcan_tristate value = ( ((uint8_t*)data)[ i / 8 ] & ( 1 << ( 7 - ( i % 8 ) ) ) ) ? LIBRAILCAN_TRISTATE_TRUE : LIBRAILCAN_TRISTATE_FALSE;
+        librailcan_tristate value = ( ((uint8_t*)data)[ i / 8 ] & ( 1 << ( i % 8 ) ) ) ? LIBRAILCAN_TRISTATE_TRUE : LIBRAILCAN_TRISTATE_FALSE;
         if( value != io->digital_outputs[ i ] )
         {
           io->digital_outputs[ i ] = value;
@@ -249,7 +249,7 @@ int librailcan_io_write_digital_output( struct librailcan_module* module , unsig
     for( uint_fast8_t i = 0 ; i < io->digital_output_count ; i++ )
       if( ( i != index && io->digital_outputs[ i ] == LIBRAILCAN_TRISTATE_TRUE ) ||
           ( i == index && value == LIBRAILCAN_TRISTATE_TRUE ) )
-        data[ i >> 3 ] |= 1 << ( 7 - ( i & 0x7 ) );
+        data[ i >> 3 ] |= 1 << ( i & 0x7 );
 
     int r = module->bus->send( module->bus , RAILCAN_SID( RAILCAN_SID_MESSAGE_OUTPUTS , module->address ) , ( io->digital_output_count + 7 ) / 8 , data );
 
